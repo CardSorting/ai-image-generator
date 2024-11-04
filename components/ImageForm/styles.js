@@ -1,10 +1,27 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, SCREEN_HEIGHT } from '../../constants/design';
 
 export default StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.neutral[50],
+  },
+  scrollContainer: {
+    ...(Platform.OS === 'web' ? {
+      height: '100vh',
+      overflow: 'auto',
+      paddingBottom: 100,
+    } : {
+      flex: 1,
+    }),
+  },
   formContent: {
-    flexGrow: 1,
     padding: SPACING.lg,
+    ...(Platform.OS === 'web' ? {
+      minHeight: '100%',
+    } : {
+      flex: 1,
+    }),
   },
   inputContainer: {
     marginBottom: SPACING.xl,
@@ -73,5 +90,11 @@ export default StyleSheet.create({
   },
   characterCountLimit: {
     color: COLORS.feedback.error.main,
+  },
+  submitButton: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.lg,
+    minHeight: 56,
+    overflow: 'visible',
   },
 });

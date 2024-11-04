@@ -4,45 +4,65 @@ import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/design';
 export default StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: COLORS.neutral[50],
     alignItems: 'center',
-    padding: SPACING.lg,
-    gap: SPACING.xl,
+    justifyContent: 'center',
+    padding: SPACING.xl,
   },
-  iconContainer: {
+  content: {
+    alignItems: 'center',
+    gap: SPACING.xl * 1.5,
+  },
+  wandContainer: {
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
+  },
+  wandWrapper: {
     width: 80,
     height: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.primary[50],
+    borderRadius: 40,
+    shadowColor: COLORS.primary[400],
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: COLORS.primary[200],
   },
-  spinner: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  text: {
+  loadingText: {
     ...TYPOGRAPHY.body1,
-    color: COLORS.neutral[700],
+    color: COLORS.primary[700],
     textAlign: 'center',
+    fontWeight: '600',
   },
   progressContainer: {
     width: '100%',
+    maxWidth: 300,
     alignItems: 'center',
     gap: SPACING.sm,
   },
   progressBar: {
     width: '100%',
-    height: 4,
+    height: 6,
     backgroundColor: COLORS.neutral[200],
-    borderRadius: 2,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     width: '100%',
     height: '100%',
     backgroundColor: COLORS.primary[500],
-    transform: [{ scaleX: 0 }],
+    borderRadius: 3,
+    shadowColor: COLORS.primary[500],
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   progressTextContainer: {
     flexDirection: 'row',
@@ -51,6 +71,7 @@ export default StyleSheet.create({
   },
   progressText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.neutral[500],
+    color: COLORS.primary[600],
+    fontWeight: '600',
   },
 });

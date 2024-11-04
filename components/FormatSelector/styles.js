@@ -9,6 +9,8 @@ export default StyleSheet.create({
     ...TYPOGRAPHY.overline,
     color: COLORS.neutral[700],
     marginBottom: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   selector: {
     gap: SPACING.sm,
@@ -35,7 +37,19 @@ export default StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedIconContainer: {
+    backgroundColor: COLORS.primary[100],
   },
   label: {
     ...TYPOGRAPHY.body2,
@@ -48,9 +62,15 @@ export default StyleSheet.create({
   description: {
     ...TYPOGRAPHY.caption,
     color: COLORS.neutral[500],
+    marginBottom: SPACING.xs,
   },
   selectedDescription: {
     color: COLORS.primary[600],
+  },
+  dimensionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
   },
   dimensions: {
     ...TYPOGRAPHY.caption,

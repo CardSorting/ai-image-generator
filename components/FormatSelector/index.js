@@ -4,25 +4,27 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from './styles';
 import { COLORS, SIZES } from '../../constants/design';
 
-export default function FormatSelector({ selectedSize, onSizeChange }) {
-  const getFormatIcon = (value) => {
-    switch (value) {
-      case 'square_hd':
-        return 'square';
-      case 'portrait_4_3':
-        return 'phone-portrait';
-      case 'landscape_16_9':
-        return 'monitor';
-      default:
-        return 'square';
-    }
-  };
+const FORMAT_ICONS = {
+  square_hd: {
+    icon: 'apps',
+    description: 'Perfect for social media posts like Instagram',
+  },
+  portrait_4_3: {
+    icon: 'cellphone-screenshot',
+    description: 'Ideal for mobile device screens and stories',
+  },
+  landscape_16_9: {
+    icon: 'monitor-screenshot',
+    description: 'Great for desktop wallpapers and presentations',
+  },
+};
 
+export default function FormatSelector({ selectedSize, onSizeChange }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>
         <MaterialCommunityIcons 
-          name="aspect-ratio" 
+          name="image-size-select-actual" 
           size={16} 
           color={COLORS.neutral[700]}
           style={{ marginRight: 4 }}
@@ -41,15 +43,20 @@ export default function FormatSelector({ selectedSize, onSizeChange }) {
           >
             <View style={styles.content}>
               <View style={styles.header}>
-                <MaterialCommunityIcons 
-                  name={getFormatIcon(size.value)}
-                  size={20}
-                  color={
-                    selectedSize === size.value 
-                      ? COLORS.primary[600]
-                      : COLORS.neutral[400]
-                  }
-                />
+                <View style={[
+                  styles.iconContainer,
+                  selectedSize === size.value && styles.selectedIconContainer
+                ]}>
+                  <MaterialCommunityIcons 
+                    name={FORMAT_ICONS[size.value].icon}
+                    size={20}
+                    color={
+                      selectedSize === size.value 
+                        ? COLORS.primary[600]
+                        : COLORS.neutral[400]
+                    }
+                  />
+                </View>
                 <Text style={[
                   styles.label,
                   selectedSize === size.value && styles.selectedLabel
@@ -61,14 +68,25 @@ export default function FormatSelector({ selectedSize, onSizeChange }) {
                 styles.description,
                 selectedSize === size.value && styles.selectedDescription
               ]}>
-                {size.description}
+                {FORMAT_ICONS[size.value].description}
               </Text>
-              <Text style={[
-                styles.dimensions,
-                selectedSize === size.value && styles.selectedDimensions
-              ]}>
-                {size.dimensions}
-              </Text>
+              <View style={styles.dimensionsContainer}>
+                <MaterialCommunityIcons 
+                  name="ruler" 
+                  size={14}
+                  color={
+                    selectedSize === size.value 
+                      ? COLORS.primary[500]
+                      : COLORS.neutral[400]
+                  }
+                />
+                <Text style={[
+                  styles.dimensions,
+                  selectedSize === size.value && styles.selectedDimensions
+                ]}>
+                  {size.dimensions}
+                </Text>
+              </View>
             </View>
             {selectedSize === size.value && (
               <View style={styles.selectedIndicator}>
