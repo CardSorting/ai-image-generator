@@ -1,305 +1,271 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
-  ActivityIndicator, 
-  ScrollView, 
-  SafeAreaView, 
-  Platform, 
-  StatusBar, 
-  TextInput,
-  Pressable,
-  Animated,
-} from 'react-native';
-import { initDatabase, saveImage, getImages, deleteImage } from '../utils/db';
-import { styles, webStyles } from '../styles/app';
-import ImageSizeSelector from '../components/ImageSizeSelector';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { SafeAreaView, Platform, StatusBar, Animated, Keyboard } from 'react-native';
+import { initDatabase, saveImage } from '../utils/db';
+import ImageForm from '../components/ImageForm';
+import Loading from '../components/Loading';
+import Preview from '../components/Preview';
+import commonStyles from '../styles/common';
+import { STEPS } from '../constants/design';
 
 const FAL_KEY = 'd1984729-bfe7-4d0a-a77d-f278c529ed0f:f285ace37543d80985057f54fce3e744';
 
-const INFERENCE_STEPS = [1, 2, 4, 8];
-
 export default function Index() {
-  const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(0));
-  
-  // Advanced settings state
+  const [currentStep, setCurrentStep] = useState(STEPS.FORM);
   const [prompt, setPrompt] = useState('');
   const [imageSize, setImageSize] = useState('square_hd');
-  const [inferenceSteps, setInferenceSteps] = useState(4);
-  const [seed, setSeed] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState(null);
+  const [error, setError] = useState(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const fadeAnim = useMemo(() => new Animated.Value(1), []);
+  const progressAnim = useMemo(() => new Animated.Value(0), []);
+  const loadingTextAnim = useMemo(() => new Animated.Value(1), []);
+  const inputScaleAnim = useMemo(() => new Animated.Value(1), []);
+  const [loadingText, setLoadingText] = useState('Preparing your canvas...');
 
   useEffect(() => {
-    const setup = async () => {
-      await initDatabase();
-      loadHistory();
+    const keyboardDidShow = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const keyboardDidHide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+
+    return () => {
+      keyboardDidShow.remove();
+      keyboardDidHide.remove();
     };
-    setup();
   }, []);
 
   useEffect(() => {
-    if (showAdvanced) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
+    initDatabase();
+  }, []);
+
+  useEffect(() => {
+    if (currentStep === STEPS.LOADING) {
+      startLoadingAnimation();
+    } else {
+      progressAnim.setValue(0);
+    }
+  }, [currentStep]);
+
+  const startLoadingAnimation = useCallback(() => {
+    const loadingSteps = [
+      { text: 'Analyzing your creative vision...', duration: 2000 },
+      { text: 'Gathering artistic inspiration...', duration: 2000 },
+      { text: 'Crafting your masterpiece...', duration: 2500 },
+      { text: 'Adding finishing touches...', duration: 1500 },
+    ];
+
+    let currentStep = 0;
+
+    const animateText = () => {
+      if (currentStep >= loadingSteps.length) return;
+
+      Animated.sequence([
+        Animated.timing(loadingTextAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(loadingTextAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 1,
-          tension: 20,
-          friction: 7,
-          useNativeDriver: Platform.OS !== 'web',
+          useNativeDriver: true,
         }),
       ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 20,
-          friction: 7,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-      ]).start();
-    }
-  }, [showAdvanced]);
 
-  const loadHistory = async () => {
-    try {
-      const images = await getImages();
-      setHistory(images);
-    } catch (error) {
-      console.error('Error loading history:', error);
-    }
-  };
+      setLoadingText(loadingSteps[currentStep].text);
+      currentStep++;
 
-  const generateImage = async () => {
-    if (!prompt.trim()) {
-      alert('Please enter a prompt');
+      setTimeout(animateText, loadingSteps[currentStep - 1].duration);
+    };
+
+    Animated.sequence([
+      Animated.timing(progressAnim, {
+        toValue: 0.3,
+        duration: 2000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(progressAnim, {
+        toValue: 0.6,
+        duration: 2500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(progressAnim, {
+        toValue: 0.9,
+        duration: 3000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    animateText();
+  }, [progressAnim, loadingTextAnim]);
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    Animated.spring(inputScaleAnim, {
+      toValue: 1.02,
+      friction: 8,
+      tension: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [inputScaleAnim]);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+    Animated.spring(inputScaleAnim, {
+      toValue: 1,
+      friction: 8,
+      tension: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [inputScaleAnim]);
+
+  const validatePrompt = useCallback((text) => {
+    if (text.trim().length < 3) {
+      return 'Please provide a more detailed description';
+    }
+    if (text.trim().length > 500) {
+      return 'Description is too long (max 500 characters)';
+    }
+    return null;
+  }, []);
+
+  const handlePromptChange = useCallback((text) => {
+    setPrompt(text);
+    setError(validatePrompt(text));
+  }, [validatePrompt]);
+
+  const generateImage = useCallback(async (advancedSettings) => {
+    const validationError = validatePrompt(prompt);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCurrentStep(STEPS.LOADING);
+    });
+
+    setError(null);
+
     try {
-      setLoading(true);
-      
-      const requestBody = {
-        prompt,
-        image_size: imageSize,
-        num_inference_steps: inferenceSteps,
-      };
-
-      if (seed) {
-        requestBody.seed = parseInt(seed);
-      }
-
       const response = await fetch('https://110602490-fast-sdxl.gateway.alpha.fal.ai/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Key ${FAL_KEY}`,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          prompt,
+          image_size: imageSize,
+          ...advancedSettings,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
       const result = await response.json();
       
-      if (result && result.images && result.images[0]) {
+      if (result?.images?.[0]?.url) {
         const url = result.images[0].url;
-        setImageUrl(url);
         await saveImage(url, prompt);
-        loadHistory();
+        setGeneratedImage({ 
+          url, 
+          prompt, 
+          size: imageSize,
+          settings: advancedSettings 
+        });
+        
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setCurrentStep(STEPS.PREVIEW);
+        });
+      } else {
+        throw new Error('No image generated');
       }
     } catch (error) {
       console.error('Error generating image:', error);
-      alert('Error generating image. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Failed to generate image. Please try again.');
+      setCurrentStep(STEPS.FORM);
     }
-  };
+  }, [prompt, imageSize, fadeAnim]);
 
-  const handleDeleteImage = async (id) => {
-    try {
-      await deleteImage(id);
-      loadHistory();
-    } catch (error) {
-      console.error('Error deleting image:', error);
-    }
-  };
-
-  const renderInferenceStepsSelector = () => {
-    if (Platform.OS === 'web') {
-      return (
-        <select
-          value={inferenceSteps}
-          onChange={(e) => setInferenceSteps(Number(e.target.value))}
-          style={webStyles.select}
-        >
-          {INFERENCE_STEPS.map((step) => (
-            <option key={step} value={step}>
-              {step} steps
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    return (
-      <TextInput
-        style={styles.input}
-        value={inferenceSteps.toString()}
-        onChangeText={(value) => setInferenceSteps(Number(value))}
-        editable={false}
-      />
-    );
-  };
+  const startOver = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCurrentStep(STEPS.FORM);
+      setPrompt('');
+      setGeneratedImage(null);
+      setError(null);
+    });
+  }, [fadeAnim]);
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
-      <ScrollView>
-        <View style={styles.content}>
-          <Text style={styles.title}>AI Image Generator</Text>
-          
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Prompt</Text>
-            <TextInput
-              style={styles.promptInput}
-              value={prompt}
-              onChangeText={setPrompt}
-              placeholder="Describe the image you want to generate..."
-              multiline
-              placeholderTextColor="#A0AEC0"
-            />
-          </View>
-
-          <Pressable
-            style={styles.advancedButton}
-            onPress={() => setShowAdvanced(!showAdvanced)}
-          >
-            <Text style={styles.advancedButtonText}>
-              {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
-            </Text>
-          </Pressable>
-
-          {showAdvanced && (
-            <Animated.View
-              style={[
-                styles.advancedSettings,
-                Platform.OS === 'web' ? {
-                  opacity: fadeAnim,
-                  transform: [{
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-20, 0],
-                    }),
-                  }],
-                } : {
-                  opacity: fadeAnim,
-                  transform: [{
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-20, 0],
-                    }),
-                  }],
-                },
-              ]}
-            >
-              <View style={styles.settingItem}>
-                <Text style={styles.label}>Image Size</Text>
-                <ImageSizeSelector
-                  value={imageSize}
-                  onChange={setImageSize}
-                />
-              </View>
-
-              <View style={styles.settingItem}>
-                <Text style={styles.label}>Inference Steps</Text>
-                {renderInferenceStepsSelector()}
-              </View>
-
-              <View style={styles.settingItem}>
-                <Text style={styles.label}>Seed (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={seed}
-                  onChangeText={setSeed}
-                  placeholder="Enter seed number"
-                  keyboardType="numeric"
-                  placeholderTextColor="#A0AEC0"
-                />
-              </View>
-            </Animated.View>
-          )}
-
-          {imageUrl && (
-            <View style={styles.latestImage}>
-              <Text style={styles.subtitle}>Latest Generation</Text>
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.mainImage}
-                resizeMode="cover"
-              />
-            </View>
-          )}
-
-          <TouchableOpacity 
-            style={[styles.generateButton, loading && styles.generateButtonDisabled]}
-            onPress={generateImage}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.generateButtonText}>Generate Image</Text>
-            )}
-          </TouchableOpacity>
-
-          {history.length > 0 && (
-            <View style={styles.historyContainer}>
-              <Text style={styles.historyTitle}>History</Text>
-              <View style={styles.historyGrid}>
-                {history.map((item) => (
-                  <View key={item.id} style={styles.historyItem}>
-                    <Image
-                      source={{ uri: item.url }}
-                      style={styles.historyImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.historyItemContent}>
-                      <Text style={styles.historyItemPrompt} numberOfLines={2}>
-                        {item.prompt}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteImage(item.id)}
-                        style={styles.deleteButton}
-                      >
-                        <Text style={styles.deleteButtonText}>Delete</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingIndicator}>
-            <ActivityIndicator size="large" color="#2563EB" />
-          </View>
-        </View>
+    <SafeAreaView style={[
+      commonStyles.container,
+      { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }
+    ]}>
+      {currentStep === STEPS.FORM && (
+        <ImageForm
+          prompt={prompt}
+          onPromptChange={handlePromptChange}
+          error={error}
+          isFocused={isFocused}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          imageSize={imageSize}
+          onSizeChange={setImageSize}
+          onSubmit={generateImage}
+          inputScaleAnim={inputScaleAnim}
+          fadeAnim={fadeAnim}
+          isValid={!error && prompt.trim().length > 0}
+        />
+      )}
+      {currentStep === STEPS.LOADING && (
+        <Loading
+          loadingText={loadingText}
+          loadingTextAnim={loadingTextAnim}
+          progressAnim={progressAnim}
+        />
+      )}
+      {currentStep === STEPS.PREVIEW && (
+        <Preview
+          image={generatedImage}
+          onBack={startOver}
+          fadeAnim={fadeAnim}
+        />
       )}
     </SafeAreaView>
   );
