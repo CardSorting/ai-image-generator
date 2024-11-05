@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SafeAreaView, Platform, StatusBar, Animated, Keyboard } from 'react-native';
+import { FAL_API_KEY, FAL_API_URL } from '@env';
 import { initDatabase, saveImage } from '../utils/db';
 import ImageForm from '../components/ImageForm';
 import Loading from '../components/Loading';
@@ -7,8 +8,6 @@ import Preview from '../components/Preview';
 import Gallery from '../components/Gallery';
 import commonStyles from '../styles/common';
 import { STEPS } from '../constants/design';
-
-const FAL_KEY = 'd1984729-bfe7-4d0a-a77d-f278c529ed0f:f285ace37543d80985057f54fce3e744';
 
 export default function Index() {
   const [currentStep, setCurrentStep] = useState(STEPS.FORM);
@@ -160,11 +159,11 @@ export default function Index() {
     setError(null);
 
     try {
-      const response = await fetch('https://110602490-fast-sdxl.gateway.alpha.fal.ai/', {
+      const response = await fetch(FAL_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Key ${FAL_KEY}`,
+          'Authorization': `Key ${FAL_API_KEY}`,
         },
         body: JSON.stringify({
           prompt,
