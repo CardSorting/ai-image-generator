@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidCredit() {
+      return request.resource.data.balance is number
+        && request.resource.data.lastRefill is timestamp
+        && request.resource.data.totalGenerated is number;
+    }
+
+    function hasEnoughCredits(creditData) {
+      return creditData.balance > 0;
+    }
+
+    function isWithinLastDay(lastRefillTime) {
+      return lastRefillTime.toMillis() > (request.time.toMillis() - 24 * 60 * 60 * 1000);
+    }
+
+    // Credits collection
+    match /credits/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && isValidCredit()
+        && request.resource.data.balance == 25  // Initial credits
+        && request.resource.data.totalGenerated == 0;
+      allow update: if isOwner(userId)
+        && isValidCredit()
+        && (
+          // Allow daily refresh
+          (request.resource.data.balance == 25 
+           && !isWithinLastDay(resource.data.lastRefill))
+          ||
+          // Allow credit usage
+          (request.resource.data.balance == resource.data.balance - 1
+           && request.resource.data.totalGenerated == resource.data.totalGenerated + 1)
+        );
+    }
+
+    // Images collection
+    match /images/{imageId} {
+      allow read: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && resource.data.status != 'deleted';
+      
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && exists(/databases/$(database)/documents/credits/$(request.auth.uid))
+        && get(/databases/$(database)/documents/credits/$(request.auth.uid)).data.balance > 0;
+      
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && (
+          // Only allow updating status to 'deleted'
+          request.resource.data.status == 'deleted'
+          || 
+          // Or updating metadata
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['metadata', 'updated_at']))
+        );
+    }
+
+    // Requests collection (for tracking API calls)
+    match /requests/{requestId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.timestamp is timestamp
+        && request.resource.data.type in ['image_generation']
+        && exists(/databases/$(database)/documents/credits/$(request.auth.uid))
+        && get(/databases/$(database)/documents/credits/$(request.auth.uid)).data.balance > 0;
+      
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'result', 'updated_at']));
+    }
+
+    // Users collection (for additional user data)
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && request.resource.data.diff(resource.data || {}).affectedKeys()
+          .hasOnly(['displayName', 'photoURL', 'settings', 'preferences', 'updated_at']);
+    }
+  }
+}

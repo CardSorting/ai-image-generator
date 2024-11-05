@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { SafeAreaView, Platform, StatusBar, Animated, Keyboard } from 'react-native';
+import { SafeAreaView, Platform, StatusBar, Animated, Keyboard, Alert } from 'react-native';
 import { FAL_API_KEY, FAL_API_URL } from '@env';
 import { initDatabase, saveImage } from '../utils/db';
 import ImageForm from '../components/ImageForm';
 import Loading from '../components/Loading';
 import Preview from '../components/Preview';
 import Gallery from '../components/Gallery';
+import Auth from '../components/Auth';
+import Credits from '../components/Credits';
+import { AuthProvider, useAuthContext } from '../components/AuthProvider';
+import useCredits from '../hooks/useCredits';
 import commonStyles from '../styles/common';
 import { STEPS } from '../constants/design';
 
-export default function Index() {
+const MainApp = () => {
+  const { isAuthenticated } = useAuthContext();
+  const { hasEnoughCredits } = useCredits();
   const [currentStep, setCurrentStep] = useState(STEPS.FORM);
   const [prompt, setPrompt] = useState('');
   const [imageSize, setImageSize] = useState('square_hd');
@@ -135,6 +141,16 @@ export default function Index() {
   }, [validatePrompt]);
 
   const generateImage = useCallback(async (advancedSettings) => {
+    const hasCredits = await hasEnoughCredits();
+    if (!hasCredits) {
+      Alert.alert(
+        'No Credits Available',
+        'You\'ll receive more credits in the next daily refresh.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     const validationError = validatePrompt(prompt);
     if (validationError) {
       setError(validationError);
@@ -180,10 +196,9 @@ export default function Index() {
       
       if (result?.images?.[0]?.url) {
         const url = result.images[0].url;
-        await saveImage(url, prompt);
+        const savedImage = await saveImage(url, prompt);
         setGeneratedImage({ 
-          url, 
-          prompt, 
+          ...savedImage,
           size: imageSize,
           settings: advancedSettings 
         });
@@ -210,7 +225,7 @@ export default function Index() {
       setError('Failed to generate image. Please try again.');
       setCurrentStep(STEPS.FORM);
     }
-  }, [prompt, imageSize, fadeAnim]);
+  }, [prompt, imageSize, fadeAnim, hasEnoughCredits]);
 
   const startOver = useCallback(() => {
     Animated.sequence([
@@ -240,11 +255,16 @@ export default function Index() {
     setCurrentStep(STEPS.PREVIEW);
   }, []);
 
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
+
   return (
     <SafeAreaView style={[
       commonStyles.container,
       { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }
     ]}>
+      <Credits />
       {currentStep === STEPS.FORM && (
         <ImageForm
           prompt={prompt}
@@ -280,5 +300,13 @@ export default function Index() {
         <Gallery onBack={handleGalleryBack} />
       )}
     </SafeAreaView>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }
