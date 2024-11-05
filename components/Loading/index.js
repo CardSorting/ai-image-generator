@@ -12,6 +12,8 @@ const SPARKLE_ICONS = [
   'shimmer',
   'star-shooting',
   'star-circle',
+  'star-face',
+  'star-three-points',
 ];
 
 const SPARKLE_COLORS = [
@@ -20,7 +22,83 @@ const SPARKLE_COLORS = [
   COLORS.primary[200],
   '#FFD700', // Gold
   '#FFF5E1', // Light gold
+  '#FFF9C4', // Light yellow
+  '#E8F5E9', // Light mint
 ];
+
+const MAGIC_PARTICLES = 12;
+const FLOATING_SPARKLES = 16;
+
+const MagicParticle = ({ index, total }) => {
+  const particleAnim = useRef(new Animated.Value(0)).current;
+  const angle = (index / total) * Math.PI * 2;
+  const radius = 60;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(particleAnim, {
+          toValue: 1,
+          duration: 2000,
+          delay: index * (2000 / total),
+          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(particleAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.magicParticle,
+        {
+          transform: [
+            {
+              translateX: particleAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.cos(angle) * radius],
+              }),
+            },
+            {
+              translateY: particleAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.sin(angle) * radius],
+              }),
+            },
+            {
+              scale: particleAnim.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, 1, 0],
+              }),
+            },
+            {
+              rotate: particleAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0deg', '360deg'],
+              }),
+            },
+          ],
+          opacity: particleAnim.interpolate({
+            inputRange: [0, 0.2, 0.8, 1],
+            outputRange: [0, 1, 1, 0],
+          }),
+        },
+      ]}
+    >
+      <MaterialCommunityIcons
+        name={SPARKLE_ICONS[index % SPARKLE_ICONS.length]}
+        size={12}
+        color={SPARKLE_COLORS[index % SPARKLE_COLORS.length]}
+      />
+    </Animated.View>
+  );
+};
 
 const FloatingSparkle = ({ delay, duration, style }) => {
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -69,9 +147,7 @@ const FloatingSparkle = ({ delay, duration, style }) => {
 
   const sparkleStyle = {
     transform: [
-      {
-        scale: scaleAnim,
-      },
+      { scale: scaleAnim },
       {
         translateY: floatAnim.interpolate({
           inputRange: [0, 0.5, 1],
@@ -107,6 +183,7 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -114,8 +191,8 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
         Animated.sequence([
           Animated.timing(rotateAnim, {
             toValue: 1,
-            duration: 2000,
-            easing: Easing.linear,
+            duration: 3000,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
           Animated.timing(rotateAnim, {
@@ -129,13 +206,13 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
         Animated.sequence([
           Animated.timing(scaleAnim, {
             toValue: 1.1,
-            duration: 1000,
+            duration: 1500,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
           Animated.timing(scaleAnim, {
             toValue: 1,
-            duration: 1000,
+            duration: 1500,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           })
@@ -145,13 +222,29 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
         Animated.sequence([
           Animated.timing(glowAnim, {
             toValue: 1,
-            duration: 1500,
+            duration: 2000,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
           Animated.timing(glowAnim, {
             toValue: 0,
-            duration: 1500,
+            duration: 2000,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          })
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0,
+            duration: 1000,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           })
@@ -164,6 +257,21 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.wandContainer}>
+          <Animated.View style={[
+            styles.wandGlow,
+            {
+              opacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.6],
+              }),
+              transform: [
+                { scale: pulseAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 1.3],
+                })},
+              ],
+            }
+          ]} />
           <Animated.View style={[
             styles.wandWrapper,
             {
@@ -186,15 +294,20 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
               color={COLORS.primary[400]} 
             />
           </Animated.View>
-          {Array.from({ length: 8 }).map((_, i) => (
+          
+          {Array.from({ length: MAGIC_PARTICLES }).map((_, i) => (
+            <MagicParticle key={`particle-${i}`} index={i} total={MAGIC_PARTICLES} />
+          ))}
+          
+          {Array.from({ length: FLOATING_SPARKLES }).map((_, i) => (
             <FloatingSparkle
-              key={i}
+              key={`sparkle-${i}`}
               delay={i * 200}
               duration={2000 + Math.random() * 1000}
               style={{
                 position: 'absolute',
-                top: Math.random() * 100 - 50,
-                left: Math.random() * 100 - 50,
+                top: Math.random() * 160 - 80,
+                left: Math.random() * 160 - 80,
               }}
             />
           ))}
@@ -205,11 +318,25 @@ export default function Loading({ loadingText, loadingTextAnim, progressAnim }) 
         </Animated.Text>
 
         <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
+          <View style={styles.progressTrack}>
             <Animated.View 
               style={[
                 styles.progressFill,
                 {
+                  transform: [{
+                    scaleX: progressAnim
+                  }]
+                }
+              ]} 
+            />
+            <Animated.View 
+              style={[
+                styles.progressGlow,
+                {
+                  opacity: pulseAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 0.6],
+                  }),
                   transform: [{
                     scaleX: progressAnim
                   }]
