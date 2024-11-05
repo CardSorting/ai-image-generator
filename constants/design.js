@@ -120,4 +120,5 @@ export const STEPS = {
   FORM: 'FORM',
   LOADING: 'LOADING',
   PREVIEW: 'PREVIEW',
+  GALLERY: 'GALLERY',
 };

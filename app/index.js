@@ -4,6 +4,7 @@ import { initDatabase, saveImage } from '../utils/db';
 import ImageForm from '../components/ImageForm';
 import Loading from '../components/Loading';
 import Preview from '../components/Preview';
+import Gallery from '../components/Gallery';
 import commonStyles from '../styles/common';
 import { STEPS } from '../constants/design';
 
@@ -232,6 +233,14 @@ export default function Index() {
     });
   }, [fadeAnim]);
 
+  const handleViewGallery = useCallback(() => {
+    setCurrentStep(STEPS.GALLERY);
+  }, []);
+
+  const handleGalleryBack = useCallback(() => {
+    setCurrentStep(STEPS.PREVIEW);
+  }, []);
+
   return (
     <SafeAreaView style={[
       commonStyles.container,
@@ -264,8 +273,12 @@ export default function Index() {
         <Preview
           image={generatedImage}
           onBack={startOver}
+          onViewGallery={handleViewGallery}
           fadeAnim={fadeAnim}
         />
+      )}
+      {currentStep === STEPS.GALLERY && (
+        <Gallery onBack={handleGalleryBack} />
       )}
     </SafeAreaView>
   );

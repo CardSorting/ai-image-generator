@@ -1,0 +1,107 @@
+import { StyleSheet } from 'react-native';
+import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/design';
+
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.neutral[50],
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral[200],
+    backgroundColor: COLORS.neutral[50],
+  },
+  title: {
+    ...TYPOGRAPHY.h2,
+    color: COLORS.neutral[800],
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  grid: {
+    padding: SPACING.md,
+  },
+  imageCard: {
+    backgroundColor: COLORS.neutral[50],
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
+    shadowColor: COLORS.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: COLORS.neutral[200],
+  },
+  thumbnail: {
+    width: '100%',
+    height: undefined,
+    aspectRatio: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral[100],
+  },
+  imageInfo: {
+    padding: SPACING.sm,
+  },
+  promptText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.neutral[700],
+    fontWeight: '500',
+    marginBottom: SPACING.xs,
+  },
+  dateText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.neutral[500],
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.xl,
+    gap: SPACING.lg,
+  },
+  emptyStateIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+  },
+  emptyStateTitle: {
+    ...TYPOGRAPHY.h3,
+    color: COLORS.neutral[700],
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  emptyStateText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.neutral[500],
+    textAlign: 'center',
+  },
+  newImageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.primary[500],
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: 12,
+    shadowColor: COLORS.primary[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  newImageButtonText: {
+    ...TYPOGRAPHY.button,
+    color: COLORS.neutral[50],
+    fontWeight: '600',
+  },
+});
